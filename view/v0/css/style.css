@@ -1,0 +1,25 @@
+/* 
+    Author     : Lucas Zingaro
+*/
+
+form{
+    align-items: center;
+    max-width: 100%;
+}
+.areaChat{
+    max-width: 100%;
+    min-width: 300px;
+    min-height: 300px;
+}
+.txtMsg{
+    max-width: 100%;
+    min-width: 300px;
+}
+.grupoTitulo{
+    font-family: fantasy;
+    font-size: 200%;
+}
+.btn{
+    font-family: fantasy;
+    font-size: 100%;
+}

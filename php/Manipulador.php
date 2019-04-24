@@ -1,153 +1,241 @@
 <?php
 
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
-
 /**
- * A classe responsavél por manipular a leitura e gravção todo e qualquer arquivo .txt
+ * Classe responsável por manipular a leitura e gravação de todo e qualquer arquivo (em modo de texto)
  *
- * @author Lucas
+ * @author Lucas Zingaro
  */
 class Manipulador {
 
     private $file = "./saves/";
-    private $conteudo = "";
+    private $conteudo;
 
     /**
-     * Contrutor da classe Manipulador
+     * Construtor da classe Manipulador
+     *
+     * @param string $caminho - Caminho de acesso ao arquivo
+     * @param string $nome - Nome do arquivo
+     * @param string $extensao - Extensão do Arquivo
      */
-    public function Manipulador($caminho = "./saves/", $nome = "", $extensao = "") {
+    public function __construct(string $caminho = "./saves/", string $nome = "", string $extensao = "") {
         $this->file = $caminho . $nome . $extensao;
     }
 
     /**
      * Verifica se o arquivo manipulado existe
+     * @return bool
      */
-    public function isExists() {
+    public function isExists(): bool {
         return file_exists($this->file);
     }
 
     /**
      * Verifica se o arquivo manipulado é realmente um arquivo
+     * @return bool
      */
-    public function isfile() {
+    public function isfile(): bool {
         return is_file($this->file);
     }
 
     /**
      * Verifica se o arquivo manipulado é um diretório
+     * @return bool
      */
-    public function isDir() {
+    public function isDir(): bool {
         return is_dir($this->file);
     }
-    
+
     /**
      * Pega o caminho completo do arquivo
+     * @return string - Caminho do arquivo
      */
-    public function getFile() {
+    public function getFile(): string {
         return $this->file;
     }
 
     /**
-     * Define conteudo do arquivo
+     * Define conteúdo do arquivo
+     *
+     * @param string $str
+     * @param bool $encodeUTF8 - define se codifica para UTF-8
      */
-    public function setConteudo($str) {
-        return $this->conteudo = $str;
+    public function setConteudo(string $str, bool $encodeUTF8 = FALSE) {
+        if ($encodeUTF8) {
+            $this->conteudo = utf8_encode($str);
+        } else {
+            $this->conteudo = $str;
+        }
     }
 
     /**
-     * Pega o conteudo do arquivo
+     * Pega o conteúdo do arquivo
+     *
+     * @param bool $decodeUTF8 - define se decodifica de UTF-8
+     * @return string - conteúdo
      */
-    public function getConteudo() {
-        return $this->conteudo;
+    public function getConteudo(bool $decodeUTF8 = FALSE): string {
+        if ($decodeUTF8) {
+            return utf8_decode($this->conteudo);
+        } else {
+            return $this->conteudo;
+        }
     }
-    
+
     /**
-     * Salva qualquer conteudo em qualquer arquivo, segundo seu modo de acesso.
+     * Salva qualquer conteúdo em qualquer arquivo, segundo seu modo de acesso.
+     * 
+     * @param string $file - Caminho do arquivo.
+     * @param string $conteudo - Conteúdo manipulado.
+     * @param string $mode - define o modo de abertura do arquivo.
+     * @return bool - Se o arquivo foi salvo.
+     * @expectedException Exception - Caso não consiga salvar.
+     * @expectedExceptionMessage Não é um arquivo válido.
+     * @expectedExceptionMessage Erro ao salvar.
      */
     public static function salvarArquivoXYZ($file, $conteudo, $mode = "w") {
-        if (!file_exists($file) || !is_file($file)) {
-            return;
+        if (!is_file($file)) {
+            throw new Exception("Não é um arquivo válido");
         }
         try {
-            $fp = fopen($file, $mode); // abre o arquivo
-            fwrite($fp, $conteudo); // grava no arquivo. Se o arquivo não existir ele será criado
-            fclose($fp);
-            return $conteudo;
-        } catch (Exception $e) {
-            return "Erro ao salvar: $e";
+            $fileOp = fopen($file, $mode); // Abre o arquivo.
+            fwrite($fileOp, $conteudo); // Grava no arquivo. Se o arquivo não existir ele será criado.
+            return TRUE;
+        } catch (Exception $exc) {
+            throw new Exception("Erro ao salvar! : " . $exc->getMessage());
+        } finally {
+            fclose($fileOp); //Fecha o arquivo.
         }
     }
-    
+
     /**
-     * Salva o conteudo no arquivo, segundo seu modo de acesso.
+     * Salva o conteúdo no arquivo, segundo seu modo de acesso.
+     * 
+     * @param string $conteudo - conteúdo manipulado.
+     * @param string $mode - define o modo de abertura do arquivo.
+     * @return bool - Se o arquivo foi salvo.
+     * @expectedException Exception - Caso não consiga salvar.
+     * @expectedExceptionMessage Não é um arquivo válido.
+     * @expectedExceptionMessage Erro ao salvar.
      */
-    public function salvarArquivoMode($conteudo = NULL, $mode = "w") {
-        if ($conteudo != NULL) {
+    public function salvarArquivo($conteudo = "AUTO", $mode = "w") {
+        if (!$this->isfile()) {
+            throw new Exception("Não é um arquivo válido : ".$this->file);
+        }
+        if ($conteudo != "AUTO") {
             $this->setConteudo($conteudo);
         }
-        return $this->salvarArquivoXYZ($this->getFile(), $this->getConteudo(), $mode);
-    }
-    
-    /**
-     * Adiciona o conteudo ao arquivo
-     */
-    public function adicionarNoArquivo($addStr) {
-        return $this->salvarArquivoMode($addStr, "a");
-    }
-    
-    /**
-     * Salva o conteudo, sobreescrevendo o anterior.
-     */
-    public function salvarArquivo($newStrTxt = NULL) {
-        return $this->salvarArquivo($newStrTxt, "w");
+        try {
+            $fileOp = fopen($this->getFile(), $mode);
+            fwrite($fileOp, $this->getConteudo());
+        } catch (Exception $exc) {
+            throw new Exception("Erro ao salvar! : " . $exc->getMessage());
+        } finally {
+            fclose($fileOp);
+        }
+        return TRUE;
+        /* //Alternativo 
+          try {
+          $this->setConteudo(Manipulador::salvarArquivoXYZ($this->getFile(), $this->getConteudo(), $mode));
+          return TRUE;
+          } catch (Exception $exc) {
+          throw new Exception($exc->getMessage());
+          }
+         */
     }
 
-    public static function RecuperarArquivoXYZ($file) {
-        if (file_exists($file) && is_file($file)) {
-            try {
-                $fp = fopen($file, "r");
-                $char = "";
-                while (!feof($fp)) {
-                    try {
-                        $char .= fgetc($fp);
-                    } catch (Exception $exc) {
-                        break;
-                    }
-                }
-                fclose($fp);
-                return ($char);
-            } catch (Exception $e) {
-                return "ERRO:RecuperarArquivo(): $e";
-            }
-        } else {
-            return "Nenhum Arquivo encontrado";
+    /**
+     * Adiciona o conteúdo ao arquivo.
+     * 
+     * @param string $conteudo - Conteúdo adicionado.
+     * @return bool - Se o arquivo foi salvo.
+     * @expectedException Exception - Caso não consiga salvar.
+     * @expectedExceptionMessage Não é um arquivo válido.
+     * @expectedExceptionMessage Erro ao adicionar ao arquivo.
+     */
+    public function adicionarAoArquivo($conteudo) {
+        if (!$this->isfile()) {
+            throw new Exception("Não é um arquivo válido : ".$this->file);
         }
+        try {
+            $fileOp = fopen($this->getFile(), "a");
+            fwrite($fileOp, $conteudo);
+        } catch (Exception $exc) {
+            throw new Exception("Erro ao adicionar ao arquivo! : " . $exc->getMessage());
+        } finally {
+            fclose($fileOp);
+        }
+        return TRUE;
+
+        /* //Alternativo 
+        try {
+            return $this->salvarArquivo($conteudo, "a");
+        } catch (Exception $exc) {
+            throw new Exception($exc->getMessage());
+        }
+        */
     }
 
-    public function RecuperarArquivo() {
-        if (file_exists($this->getFile())) {
-            try {
-                $fp = fopen($this->getFile(), "r");
-                $char = "";
-                while (!feof($fp)) {
-                    try {
-                        $char .= fgetc($fp);
-                    } catch (Exception $exc) {
-                        break;
-                    }
-                }
-                fclose($fp);
-                return utf8_encode($char);
-            } catch (Exception $e) {
-                return "ERRO:RecuperarArquivo(): $e";
-            }
-        } else {
-            return "Nenhum Arquivo encontrado";
+    /**
+     * Recupera todos os dados de um arquivo.
+     * 
+     * @param string $file - Caminho do arquivo.
+     * @return string - Conteúdo encontrado.
+     * @expectedException Exception - Caso não consiga recuparar o conteúdo.
+     * @expectedExceptionMessage Não é um arquivo válido.
+     * @expectedExceptionMessage Erro ao recuperar conteúdo.
+     */
+    public static function recuperarArquivoXYZ($file): string {
+        if (!file_exists($file) && !is_file($file)) {
+            throw new Exception("Não é um arquivo válido");
         }
+        $char = "";
+        try {
+            $fileOp = fopen($file, "r"); // Abre o arquivo
+            while (!feof($fileOp)) {
+                $char .= fgetc($fileOp); // Guarda todo conteúdo do arquivo em $char
+            }
+        } catch (Exception $exc) {
+            throw new Exception("Erro ao recuperar conteúdo : " . $exc->getMessage());
+        } finally {
+            fclose($fileOp); //Fecha o arquivo
+        }
+        return $char;
+    }
+
+    /**
+     * Recupera todos os dados do arquivo.
+     * 
+     * @param bool $encodeUTF8 - define se codifica para UTF-8
+     * @return bool - Se o conteúdo foi recuperado;
+     * @expectedException Exception - Caso ocorra um erro ao recuperar conteúdo.
+     */
+    public function recuperarArquivo(bool $encodeUTF8 = FALSE): bool {
+        if (!$this->isfile() || !$this->isExists()) {
+            return FALSE;
+        }
+        try {
+            $fileOp = fopen($this->getFile(), "r");
+            $char = "";
+            while (!feof($fileOp)) {
+                $char .= fgetc($fileOp);
+            }
+        } catch (Exception $exc) {
+            throw new Exception("Erro ao recuperar conteúdo : " . $exc->getMessage());
+        } finally {
+            fclose($fileOp);
+        }
+        $this->setConteudo($char, $encodeUTF8);
+        return TRUE;
+        
+        /** //Alternativo 
+        try {
+            $conteudo = $this->RecuperarArquivoXYZ($this->getFile());
+            $this->setConteudo($conteudo);
+            return TRUE;
+        } catch (Exception $exc) {
+            throw new Exception($exc->getMessage());
+        }
+        */
     }
 
 }
